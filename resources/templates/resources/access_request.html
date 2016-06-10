@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load marks %}
+
+{% block title %}Запрос на предоставление доступа{% endblock %}
+{% block header_title %}Запрос на предоставление доступа{% endblock %}
+
+{% block content %}
+    <div class="col-md-6 col-md-offset-3">
+        <dl class="dl-horizontal">
+            <dt>Клиент</dt><dd>{{ object.client }}</dd>
+            <dt>Ресурс</dt><dd>{{ object.resource }}</dd>
+            <dt>Инициатор</dt><dd>{{ object.user }}</dd>
+        </dl>
+
+        {% with criteria=object.resource.criteria.all owners=object.resource.owners.all marks=object.marks.all %}
+            {% for owner in owners %}
+                {% if user == owner.user %}
+                <form method="post">
+                <h3>Оценки по критериям</h3>
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input type="submit" value="Сохранить" class="btn-primary">
+                </form>
+            {% endif %}
+            {% endfor %}
+
+
+
+            {% if object.user == user %}
+                <table class="table table-bordered">
+                    <caption>Оценки согласующих по критериям</caption>
+                    <thead>
+                    <tr>
+                        <th></th>
+                        {% for criterion in criteria %}
+                            <th>{{ criterion.criteria.name }}</th>
+                        {% endfor %}
+                    </tr>
+
+                    </thead>
+                    <tbody>
+                    {% for owner in owners %}
+                        <tr>
+                            <td>{{ owner.user.username }}</td>
+                            {% for criterion in criteria %}
+                                {% with mark=marks|by_owner:owner|by_criterion:criterion|first %}
+                                    <td>{{ mark.mark|default_if_none:"Не проставлена" }}
+
+                                    </td>
+                                {% endwith %}
+                            {% endfor %}
+                        </tr>
+
+                    {% endfor %}
+                    </tbody>
+
+
+                </table>
+            {% endif %}
+
+            {% if marks|not_filled|count == 0 %}
+                <a href="{% url 'oauth_endpoint:code' pk=object.pk %}" class="btn btn-success" role="button">Получить код</a>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+{% endblock %}
